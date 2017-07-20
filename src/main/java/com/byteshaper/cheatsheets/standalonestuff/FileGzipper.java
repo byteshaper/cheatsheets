@@ -1,4 +1,4 @@
-package com.byteshaper.cheatsheets;
+package com.byteshaper.cheatsheets.standalonestuff;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
