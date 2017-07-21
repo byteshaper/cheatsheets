@@ -22,8 +22,7 @@ public class RestExample {
     @RequestMapping(value = "/example/{input}", method = RequestMethod.GET, produces = "application/json") 
     @ApiOperation(
             value = "This endpoint returns some magic stuff derived from the input :-)", 
-            consumes = "application/json",
-            produces = "text/plain")
+            produces = "application/json")
     public Stuff getStuffAsJson(
             
             @PathVariable("input") // required = true has no effect here
@@ -37,5 +36,5 @@ public class RestExample {
         stuff.message = exampleService.processInput(input, filterBy);
         stuff.number = 42;
         return stuff;
-    }
+    }    
 }
