@@ -36,6 +36,9 @@ dependencies {
   // for RenderPdf example:
   compile 'com.itextpdf:itextpdf:5.5.10'
   
+  // for SSH example:
+  compile 'com.jcraft:jsch:0.1.54'
+  
   testCompile 'junit:junit:4.12'
   testCompile 'org.springframework.boot:spring-boot-starter-test:1.5.4.RELEASE'
   testCompile 'io.rest-assured:rest-assured:3.0.3'
