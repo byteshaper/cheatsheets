@@ -8,13 +8,59 @@ import com.jcraft.jsch.UserInfo;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.Arrays;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
 
 /**
  * Opens a SSH connection to a remote linux server, runs a shell command, reports every line this 
- * command writes to stdout, and closes the connection. 
+ * command writes to stdout and stderr, and closes the connection.
+ * 
+ * Creates two callables and lets them run asynchronously to make sure neither waiting for stdout and stderr 
+ * does not block each other. 
  *
  */
 public class RemoteSSHCaller {
+    
+    private static class OutputMonitor implements Callable<String> {
+        
+        private final BufferedReader outputReader;
+        
+        private final String rolename;
+        
+        public OutputMonitor(BufferedReader outputReader, String rolename) {
+            this.outputReader = outputReader;
+            this.rolename = rolename;
+        }
+
+        @Override
+        public String call() throws Exception {
+            
+            StringBuilder remoteProcessOutputBuffer = new StringBuilder("\r\n");
+            
+            try {
+                String line = outputReader.readLine();
+                
+                if(line == null) {
+                    remoteProcessOutputBuffer.append("No " + rolename + "-output from remote process on stream");
+                }
+                
+                while(line != null) {
+                    remoteProcessOutputBuffer.append("\r\n").append(line);
+                    line = outputReader.readLine();
+                }
+                
+            } catch(Exception e) {
+                // log error
+            } 
+            
+            return remoteProcessOutputBuffer.toString();
+        }
+    }
+    
     
     public void triggerJob() {
         
@@ -30,21 +76,31 @@ public class RemoteSSHCaller {
             session.connect();
             channel = (ChannelExec) session.openChannel("exec");
             
-            try (BufferedReader remoteOutReader = new BufferedReader(new InputStreamReader(channel.getInputStream()))) {
+            try (BufferedReader remoteOutReader = new BufferedReader(new InputStreamReader(channel.getInputStream()));
+                 BufferedReader remoteErrReader = new BufferedReader(new InputStreamReader(channel.getErrStream()))) {
                 channel.setCommand(command);
                 channel.connect();
                 
-                String line = remoteOutReader.readLine();
+                OutputMonitor outMonitor = new OutputMonitor(remoteOutReader, "stdout");
+                OutputMonitor errMonitor = new OutputMonitor(remoteErrReader, "stderr");
                 
-                if(line == null) {
-                    System.out.println("Nothing to output");
-                }
-                
-                while(line != null) {
-                    System.out.println("Remote output: " + line);
-                }
+                ExecutorService executorService = Executors.newFixedThreadPool(2);
+                String result = executorService
+                    .invokeAll(Arrays.asList(outMonitor, errMonitor))
+                    .stream()
+                    .map(future -> {
+                        
+                        try {
+                            return future.get();
+                        } catch(ExecutionException | InterruptedException e) {
+                            return "Problems reading result from thread";
+                        }
+                        
+                    })
+                    .collect(Collectors.joining("\r\n"));
+                System.out.println(result);
             }
-        } catch (JSchException | IOException e) {
+        } catch (JSchException | IOException | InterruptedException e) {
             // handle exception
         } finally {
             
