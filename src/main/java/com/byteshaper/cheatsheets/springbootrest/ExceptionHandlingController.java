@@ -1,6 +1,10 @@
 package com.byteshaper.cheatsheets.springbootrest;
 
 import java.io.IOException;
+import java.util.stream.Collectors;
+
+import javax.validation.ConstraintViolationException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -45,17 +49,25 @@ public class ExceptionHandlingController {
      * @return
      * @throws IOException
      */
-    @ExceptionHandler(NumberFormatException.class)
-    public ResponseEntity<ErrorJson> numberFormatExceptionForJson(NumberFormatException e) {
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ErrorJson> constraintViolationException(ConstraintViolationException e) {
         
+    	String message = e
+    			.getConstraintViolations()
+    			.stream()
+    			.map(v -> v.getMessage())
+    			.collect(Collectors.joining(";"));
+    	
         LOGGER.warn(
                 String.format(
                         "%s , errorMessage=%s", 
                         e.getClass().getSimpleName(), 
-                        e.getMessage()), e);
+                        message));
         
-        return ResponseEntity.status(400).body(new ErrorJson("NumberFormatError dude: " + e.getMessage()));
+        return ResponseEntity.status(400).body(new ErrorJson("ConstraintViolationException dude: " + message));
     }
+    
+    
     
    
     /**
