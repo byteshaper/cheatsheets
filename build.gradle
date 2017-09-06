@@ -7,7 +7,6 @@ buildscript {
   dependencies { classpath("org.springframework.boot:spring-boot-gradle-plugin:1.5.4.RELEASE") }
 }
 
-
 apply plugin: 'java'
 apply plugin: 'eclipse'
 apply plugin: 'org.springframework.boot'

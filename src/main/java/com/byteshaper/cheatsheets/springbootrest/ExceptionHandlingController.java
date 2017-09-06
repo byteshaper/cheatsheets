@@ -46,7 +46,7 @@ public class ExceptionHandlingController {
      * @throws IOException
      */
     @ExceptionHandler(NumberFormatException.class)
-    public ResponseEntity<ErrorJson> numberFormatExceptionForJson(NumberFormatException e) throws IOException {
+    public ResponseEntity<ErrorJson> numberFormatExceptionForJson(NumberFormatException e) {
         
         LOGGER.warn(
                 String.format(
@@ -59,7 +59,7 @@ public class ExceptionHandlingController {
     
    
     /**
-     * That would work in case it's a application/json endpoint - if both were active, Spring would have problems 
+     * That would work in case it's a text/plain endpoint - if both were active, Spring would have problems 
      * since the handler would be ambiguous.
      * 
      * @param e
@@ -68,7 +68,7 @@ public class ExceptionHandlingController {
      */
     /*
     @ExceptionHandler(NumberFormatException.class)
-    public ResponseEntity<String> numberFormatExceptionForString(NumberFormatException e) throws IOException {
+    public ResponseEntity<String> numberFormatExceptionForString(NumberFormatException e) {
         
         LOGGER.warn(
                 String.format(
