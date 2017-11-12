@@ -1,10 +1,12 @@
 package com.byteshaper.cheatsheets.springbootrest;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.List;
 import java.util.stream.Collectors;
-
+import javax.servlet.http.HttpServletRequest;
 import javax.validation.ConstraintViolationException;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -43,14 +45,14 @@ public class ExceptionHandlingController {
     private static final Logger LOGGER = LoggerFactory.getLogger(ExceptionHandlingController.class);
     
     /**
-     * In case it's a application/json endpoint
+     * Handler method that sends an error json message in case the request accepts json, or plain text otherwise. 
      * 
      * @param e
      * @return
      * @throws IOException
      */
     @ExceptionHandler(ConstraintViolationException.class)
-    public ResponseEntity<ErrorJson> constraintViolationException(ConstraintViolationException e) {
+    public ResponseEntity<Object> constraintViolationException(ConstraintViolationException e, HttpServletRequest req) {
         
     	String message = e
     			.getConstraintViolations()
@@ -63,32 +65,19 @@ public class ExceptionHandlingController {
                         "%s , errorMessage=%s", 
                         e.getClass().getSimpleName(), 
                         message));
+        List<String> headers = new ArrayList<>();
+        Enumeration<String> en = req.getHeaders("accept");
         
-        return ResponseEntity.status(400).body(new ErrorJson("ConstraintViolationException dude: " + message));
+        while(en.hasMoreElements()) {
+            headers.add(en.nextElement());
+        }
+
+        LOGGER.warn("REQUEST was: {} - {}", req.getRequestURI(), headers);
+        
+        if(headers.contains("application/json")) {
+            return ResponseEntity.status(400).body(new ErrorJson("ConstraintViolationException JSON dude: " + message));    
+        } else {
+            return ResponseEntity.status(400).body("ConstraintViolationException TEXT dude: " + message);
+        }
     }
-    
-    
-    
-   
-    /**
-     * That would work in case it's a text/plain endpoint - if both were active, Spring would have problems 
-     * since the handler would be ambiguous.
-     * 
-     * @param e
-     * @return
-     * @throws IOException
-     */
-    /*
-    @ExceptionHandler(NumberFormatException.class)
-    public ResponseEntity<String> numberFormatExceptionForString(NumberFormatException e) {
-        
-        LOGGER.warn(
-                String.format(
-                        "%s , errorMessage=%s", 
-                        e.getClass().getSimpleName(), 
-                        e.getMessage()), e);
-        
-        return ResponseEntity.status(400).body("NumberFormatError dude: " + e.getMessage());
-    }
-    */
 }
